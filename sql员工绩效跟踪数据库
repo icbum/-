@@ -1,0 +1,80 @@
+-- 创建数据库
+CREATE DATABASE employee_performance;
+USE employee_performance;
+
+-- 创建表
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY,
+    department_name VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    department_id INT,
+    hire_date DATE,
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+CREATE TABLE performance_reviews (
+    review_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT,
+    review_date DATE NOT NULL,
+    performance_score INT CHECK (performance_score BETWEEN 1 AND 10),
+    comments TEXT,
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id)
+);
+
+-- 插入样本数据
+INSERT INTO departments (department_id, department_name) VALUES
+(1, 'Sales'),
+(2, 'Engineering'),
+(3, 'Human Resources');
+
+INSERT INTO employees (employee_id, first_name, last_name, department_id, hire_date) VALUES
+(101, 'John', 'Doe', 1, '2023-01-15'),
+(102, 'Jane', 'Smith', 2, '2022-06-10'),
+(103, 'Emily', 'Johnson', 1, '2023-03-20'),
+(104, 'Michael', 'Brown', 3, '2021-11-05');
+
+INSERT INTO performance_reviews (employee_id, review_date, performance_score, comments) VALUES
+(101, '2023-06-30', 8, 'Exceeded sales targets'),
+(101, '2023-12-31', 9, 'Outstanding performance'),
+(102, '2023-06-30', 7, 'Good technical contributions'),
+(103, '2023-06-30', 6, 'Needs improvement in client interactions'),
+(104, '2023-06-30', 8, 'Effective team management');
+
+-- 示例查询
+-- 1. 按部门检索平均绩效得分
+SELECT 
+    d.department_name,
+    AVG(pr.performance_score) AS avg_score
+FROM departments d
+JOIN employees e ON d.department_id = e.department_id
+JOIN performance_reviews pr ON e.employee_id = pr.employee_id
+GROUP BY d.department_name
+ORDER BY avg_score DESC;
+
+-- 2. 列出高绩效员工（得分 >= 8）
+SELECT 
+    e.first_name,
+    e.last_name,
+    pr.performance_score,
+    pr.review_date
+FROM employees e
+JOIN performance_reviews pr ON e.employee_id = pr.employee_id
+WHERE pr.performance_score >= 8
+ORDER BY pr.performance_score DESC;
+
+-- 3. 更新特定考核的绩效得分
+UPDATE performance_reviews
+SET performance_score = 7, comments = 'Improved client interactions'
+WHERE review_id = 4;
+
+-- 4. 删除员工记录（级联删除将移除相关考核记录）
+DELETE FROM employees
+WHERE employee_id = 103;
+
+-- 添加索引以优化性能
+CREATE INDEX idx_employee_id ON performance_reviews(employee_id);
